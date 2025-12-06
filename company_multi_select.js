@@ -79,7 +79,7 @@
 
     // ラベル
     var label = document.createElement('div');
-    label.textContent = '送り先を選んでください(複数選択はCtrlを押しながら)';
+    label.textContent = '送り先を選択してください(Ctrlを押しながら複数選択)';
     spaceEl.appendChild(label);
 
     // <select multiple>
