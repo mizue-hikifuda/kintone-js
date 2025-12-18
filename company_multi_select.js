@@ -5,11 +5,13 @@
   const MASTER_APP_ID = 9;
   const MASTER_COMPANY_FIELD = 'companyName';
   const MASTER_BPOID_FIELD = 'bpoId';
+  const MASTER_GOOGLE_DRIVE_ID_FIELD = 'google_drive_id';
 
   // このアプリ側のフィールドコード
   const SPACE_FIELD_CODE = 'company_multi_space'; // スペースフィールド
   const STORE_FIELD_CODE = 'company_multi_store'; // 選択結果を保存する文字列(複数行)フィールド
   const SLACKID_FIELD_CODE = 'slackId_multi';     // 新しいフィールド：bpoId を保存する文字列(複数行)フィールド
+  const GOOGLE_DRIVE_ID_MULTI_FIELD_CODE = 'google_drive_id_multi';
 
   // 対象イベント：新規作成画面・編集画面表示
   const showEvents = [
@@ -52,7 +54,7 @@
     const params = {
       app: MASTER_APP_ID,
       query: query,
-      fields: [MASTER_COMPANY_FIELD, MASTER_BPOID_FIELD]
+      fields: [MASTER_COMPANY_FIELD, MASTER_BPOID_FIELD, MASTER_GOOGLE_DRIVE_ID_FIELD]
     };
 
     return kintone.api(
@@ -64,7 +66,8 @@
       return resp.records.map(function(rec) {
         return {
           name: rec[MASTER_COMPANY_FIELD].value,
-          bpoId: rec[MASTER_BPOID_FIELD].value
+          bpoId: rec[MASTER_BPOID_FIELD].value,
+          googleDriveId: rec[MASTER_GOOGLE_DRIVE_ID_FIELD].value
         };
       });
     });
@@ -99,6 +102,7 @@
       option.value = item.name;                 // 表示＆選択値は companyName
       option.textContent = item.name;
       option.setAttribute('data-bpoid', item.bpoId); // bpoId を属性に保持
+      option.setAttribute('data-googledriveid', item.googleDriveId); // googleDriveId を属性に保持
 
       // 既存レコードで選択済みのものは pre-select
       if (selected && selected.indexOf(item.name) !== -1) {
@@ -111,8 +115,8 @@
   }
 
   /**
-   * <select multiple> から選択された companyName, bpoId を配列で取得
-   * @return {Array<{name: string, bpoId: string}>}
+   * <select multiple> から選択されたデータを配列で取得
+   * @return {Array<{name: string, bpoId: string, googleDriveId: string}>}
    */
   function getSelectedCompanyInfos() {
     var select = document.getElementById('company-multi-select');
@@ -125,7 +129,8 @@
       if (opt.selected) {
         list.push({
           name: opt.value,
-          bpoId: opt.getAttribute('data-bpoid') || ''
+          bpoId: opt.getAttribute('data-bpoid') || '',
+          googleDriveId: opt.getAttribute('data-googledriveid') || ''
         });
       }
     }
@@ -141,9 +146,10 @@
   kintone.events.on(submitEvents, function(event) {
     var record = event.record;
 
-    var selectedInfos = getSelectedCompanyInfos(); // [{name, bpoId}, ...]
+    var selectedInfos = getSelectedCompanyInfos(); // [{name, bpoId, googleDriveId}, ...]
     var selectedNames = selectedInfos.map(function(item) { return item.name; });
     var selectedBpoIds = selectedInfos.map(function(item) { return item.bpoId; });
+    var selectedGoogleDriveIds = selectedInfos.map(function(item) { return item.googleDriveId; });
 
     // company_multi_store には companyName 
     record[STORE_FIELD_CODE].value = selectedNames.join('\n');
@@ -151,6 +157,11 @@
     // slackId_multi には bpoId 
     if (record[SLACKID_FIELD_CODE]) {
       record[SLACKID_FIELD_CODE].value = selectedBpoIds.join(',');
+    }
+
+    // google_drive_id_multi には google_drive_id
+    if (record[GOOGLE_DRIVE_ID_MULTI_FIELD_CODE]) {
+      record[GOOGLE_DRIVE_ID_MULTI_FIELD_CODE].value = selectedGoogleDriveIds.join(',');
     }
 
     return event;
